@@ -7,10 +7,11 @@ public class Alerta {
 	private String pontoDeVenda;
 	private String descricao;
 	private String produto;
+	// Anotação adicionada para alterar o nome usado no JSON
 	@JsonProperty(value = "flagTipo")
 	private Integer flTipo;
 	private Integer margem;
-	// Incluído para os novos alertas
+	// Incluído para fazer a persistência dos novos alertas
 	private String categoria;
 
 	public String getPontoDeVenda() {

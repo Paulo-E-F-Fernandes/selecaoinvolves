@@ -62,6 +62,11 @@ public class ProcessadorAlertas {
 		}
 	}
 
+	/**
+	 * A lógica foi alterada para utilizar o design pattern Chains of Responsability.
+	 *
+	 * @return o primeiro {@link TipoAlerta} que será executado e apartir desse é chamado os demais.
+	 */
 	private TipoAlerta montarCadeiaDeExecucao() {
 		final TipoAlerta ausenteGondola = new AusenteGondola(gateway);
 		final TipoAlerta precoColetadoMaiorQueEstipulado = new PrecoColetadoMaiorQueEstipulado(gateway);

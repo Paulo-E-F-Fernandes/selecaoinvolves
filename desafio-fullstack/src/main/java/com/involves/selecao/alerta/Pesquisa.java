@@ -8,13 +8,17 @@ public class Pesquisa {
 	private int id;
 	private String rotulo;
 	private String notificante;
+	// Anotação adicionada para manter as conversões Java de nomenclatura
 	@SerializedName(value = "ponto_de_venda")
 	private String pontoDeVenda;
 	private String produto;
+	// Anotação adicionada para manter as conversões Java de nomenclatura
 	@SerializedName(value = "preco_estipulado")
 	private String precoEstipulado;
 	private List<Resposta> respostas;
 
+	// Anotação adicionada para manter as conversões Java de nomenclatura
+	// Atibutos adicionados para os novos alertas
 	@SerializedName(value = "participacao_estipulada")
 	private String participacaoEstipulada;
 	private String categoria;
@@ -75,6 +79,7 @@ public class Pesquisa {
 		this.precoEstipulado = precoEstipulado;
 	}
 
+	// Aadicionados para os novos alertas
 	public String getParticipacaoEstipulada() {
 		return participacaoEstipulada;
 	}

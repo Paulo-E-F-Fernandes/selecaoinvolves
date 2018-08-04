@@ -2,6 +2,12 @@ package com.involves.selecao.service.designpatterns;
 
 import com.involves.selecao.alerta.Pesquisa;
 
+/**
+ * Classe criada para a utilização do design pattern <b>Method Template</b>.
+ *
+ * @author Paulo Fernandes
+ *
+ */
 public abstract class TipoAlertaBase implements TipoAlerta {
 
 	private TipoAlerta proximo;

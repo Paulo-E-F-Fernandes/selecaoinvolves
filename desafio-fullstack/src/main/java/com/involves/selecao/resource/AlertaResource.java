@@ -38,7 +38,14 @@ public class AlertaResource {
 		}
 	}
 
-	//
+	/**
+	 * Método criado para expor o serviço que retorna todos os {@link Alerta} persistidos após
+	 *  a chamada ao serviço <b>{domínio}/alertas/processar</b>.<br><br>
+	 *
+	 * Para chamar esse serviço é necessário fazer um <b>GET</b> em <b>{domínio}/alertas/</b>.
+	 *
+	 * @return {@link List} de {@link Alerta} persistidos.
+	 */
 	@GetMapping("/")
 	public List<Alerta> listar() {
 		return buscaAlertasService.buscarTodos();
