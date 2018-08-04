@@ -1,81 +1,81 @@
 package com.involves.selecao.service;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
-import com.involves.selecao.alerta.Alerta;
+import com.google.gson.reflect.TypeToken;
 import com.involves.selecao.alerta.Pesquisa;
-import com.involves.selecao.alerta.Resposta;
 import com.involves.selecao.gateway.AlertaGateway;
+import com.involves.selecao.service.designpatterns.AusenteGondola;
+import com.involves.selecao.service.designpatterns.ParticipacaoInferiorEstipulado;
+import com.involves.selecao.service.designpatterns.ParticipacaoSuperiorEstipulado;
+import com.involves.selecao.service.designpatterns.PrecoColetadoMaiorQueEstipulado;
+import com.involves.selecao.service.designpatterns.PrecoColetadoMenorQueEstipulado;
+import com.involves.selecao.service.designpatterns.TipoAlerta;
 
 @Service
 public class ProcessadorAlertas {
 
+	private static final String URL_PESQUISAS = "https://selecao-involves.agilepromoter.com/pesquisas";
+
 	@Autowired
 	private AlertaGateway gateway;
-	
+
 	public void processa() throws IOException {
-		URL url = new URL("http://selecao-involves.agilepromoter.com/pesquisas");
-		HttpURLConnection con = (HttpURLConnection) url.openConnection();
+		final List<Pesquisa> ps = buscarListaDePesquisas();
+
+		final TipoAlerta tipoAlertaInicial = montarCadeiaDeExecucao();
+
+		ps.forEach(pesquisa -> tipoAlertaInicial.executar(pesquisa));
+	}
+
+	private List<Pesquisa> buscarListaDePesquisas() throws IOException {
+		final URL url = new URL(URL_PESQUISAS);
+		final HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		con.setRequestMethod("GET");
-		
-		BufferedReader in = new BufferedReader(
-		  new InputStreamReader(con.getInputStream(), "UTF-8"));
+
+		final BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));
+		final StringBuilder content = new StringBuilder();
 		String inputLine;
-		StringBuffer content = new StringBuffer();
-		
+
 		while ((inputLine = in.readLine()) != null) {
-		    content.append(inputLine);
+			content.append(inputLine);
 		}
+
 		in.close();
 
-		Gson gson = new Gson();
-		Pesquisa[] ps =  gson.fromJson(content.toString(), Pesquisa[].class);
-		for (int i = 0; i < ps.length; i++){
-			for (int j = 0; j < ps[i].getRespostas().size(); j++){
-				Resposta resposta = ps[i].getRespostas().get(j);
-				if (resposta.getPergunta().equals("Qual a situação do produto?")) {
-					if(resposta.getResposta().equals("Produto ausente na gondola")){
-					    Alerta alerta = new Alerta();
-					    alerta.setPontoDeVenda(ps[i].getPonto_de_venda());
-					    alerta.setDescricao("Ruptura detectada!");
-					    alerta.setProduto(ps[i].getProduto());
-					    alerta.setFlTipo(1);
-					    gateway.salvar(alerta);
-					}
-				} else if(resposta.getPergunta().equals("Qual o preço do produto?")) {
-					int precoColetado = Integer.parseInt(resposta.getResposta());
-					int precoEstipulado = Integer.parseInt(ps[i].getPreco_estipulado());
-					if(precoColetado > precoEstipulado){
-					    Alerta alerta = new Alerta();
-					    int margem = precoEstipulado - Integer.parseInt(resposta.getResposta());
-					    alerta.setMargem(margem);
-					    alerta.setDescricao("Preço acima do estipulado!");
-					    alerta.setProduto(ps[i].getProduto());
-					    alerta.setPontoDeVenda(ps[i].getPonto_de_venda());
-					    alerta.setFlTipo(2);
-					    gateway.salvar(alerta);
-					} else if(precoColetado < precoEstipulado){
-						Alerta alerta = new Alerta();
-					    int margem = precoEstipulado - Integer.parseInt(resposta.getResposta());
-					    alerta.setMargem(margem);
-					    alerta.setDescricao("Preço abaixo do estipulado!");
-					    alerta.setProduto(ps[i].getProduto());
-					    alerta.setPontoDeVenda(ps[i].getPonto_de_venda());
-					    alerta.setFlTipo(3);
-					    gateway.salvar(alerta);
-					}
-				} else {
-					System.out.println("Alerta ainda não implementado!");
-				}
-			} 
+		try {
+			final Type pesquisaListType = new TypeToken<ArrayList<Pesquisa>>() {}.getType();
+			return new Gson().fromJson(content.toString(), pesquisaListType);
+		} catch (final IllegalStateException e) {
+			return new ArrayList<>();
 		}
 	}
-}
 
+	private TipoAlerta montarCadeiaDeExecucao() {
+		final TipoAlerta ausenteGondola = new AusenteGondola(gateway);
+		final TipoAlerta precoColetadoMaiorQueEstipulado = new PrecoColetadoMaiorQueEstipulado(gateway);
+		final TipoAlerta precoColetadoMenorQueEstipulado = new PrecoColetadoMenorQueEstipulado(gateway);
+		final TipoAlerta participacaoInferiorEstipulado = new ParticipacaoInferiorEstipulado(gateway);
+		final TipoAlerta participacaoSuperiorEstipulado = new ParticipacaoSuperiorEstipulado(gateway);
+
+		ausenteGondola.setProximo(precoColetadoMaiorQueEstipulado);
+		precoColetadoMaiorQueEstipulado.setProximo(precoColetadoMenorQueEstipulado);
+		precoColetadoMenorQueEstipulado.setProximo(participacaoInferiorEstipulado);
+		participacaoInferiorEstipulado.setProximo(participacaoSuperiorEstipulado);
+		participacaoSuperiorEstipulado.setProximo(null);
+
+		return ausenteGondola;
+	}
+
+}
